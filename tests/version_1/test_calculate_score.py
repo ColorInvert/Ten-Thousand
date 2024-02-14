@@ -17,6 +17,12 @@ def test_single_one():
     expected = 100
     assert actual == expected
 
+    # pytest.mark.skip("TODO")
+def test_one_and_scoreless():
+    actual = GameLogic.calculate_score((1,4))
+    expected = 100
+    assert actual == expected
+
 
 # pytest.mark.skip("TODO")
 def test_two_fives():
