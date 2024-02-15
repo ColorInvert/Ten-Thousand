@@ -46,7 +46,6 @@ class BaseBot(ABC):
         line = " ".join(args)
 
         if "unbanked points" in line:
-
             # parse the proper string
             # E.g. "You have 700 unbanked points and 2 dice remaining"
             unbanked_points_part, dice_remaining_part = line.split("unbanked points")
@@ -57,7 +56,6 @@ class BaseBot(ABC):
             self.dice_remaining = int(re.sub("\D", "", dice_remaining_part))
 
         elif line.startswith("*** "):
-
             self.last_roll = [int(ch) for ch in line if ch.isdigit()]
 
         else:
@@ -69,15 +67,12 @@ class BaseBot(ABC):
         """steps in front of the real builtin print function"""
 
         if self.last_print == "(y)es to play or (n)o to decline":
-
             return "y"
 
         elif self.last_print == "Enter dice to keep, or (q)uit:":
-
             return self._enter_dice()
 
         elif self.last_print == "(r)oll again, (b)ank your points or (q)uit:":
-
             return self._roll_bank_or_quit()
 
         raise ValueError(f"Unrecognized last print {self.last_print}")
@@ -139,7 +134,13 @@ class NervousNellie(BaseBot):
 class YourBot(BaseBot):
     def _roll_bank_or_quit(self):
         """your logic here"""
-        return "b"
+
+        # Keep On Rolling until we hit 1000 points or more, then bank.
+        if self.unbanked_points <= 1000:
+            return "r"
+
+        else:
+            return "b"
 
     def _enter_dice(self):
         """simulate user entering which dice to keep.
@@ -149,6 +150,6 @@ class YourBot(BaseBot):
 
 
 if __name__ == "__main__":
-    num_games = 2
+    num_games = 100
     NervousNellie.play(num_games)
-    #YourBot.play(num_games)
+    YourBot.play(num_games)

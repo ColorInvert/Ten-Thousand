@@ -1,7 +1,8 @@
 #
-#! IMPORTANT: Version one of the scoring system for this program was written through CHATGPT3.5 prompt engineering. Full list of commands given is included in prompt.md, as well as reasoning for this approach. As of version 4 the GPT code was completely replaced with my own.
+#! IMPORTANT: Version one of the scoring system for this program was written through CHATGPT3.5 prompt engineering. Full list of commands given is included in prompt.md, as well as reasoning for this approach.
+
+#! As of version 4 the CHATGPT scoring code was completely replaced with my own.
 import random
-import time
 from collections import Counter
 
 
@@ -84,42 +85,6 @@ class GameLogic:
         return tuple(random.randint(1, 6) for _ in range(num_dice))
 
     @staticmethod
-    def zilch_check(this_roll, held_dice):
-        #!ZILCH CHECK IS CURRENTLY DUMMIED OUT, IN FAVOR OF GET_SCORERS.
-        # NOTE this_roll is a tuple and thus immutable, and held_dice is a list.
-
-        # TODO: Make check for if new roll has a 1, has a 5, or if held and new
-        # roll combined create 3 of a kind of any number, or a straight, or 3 pairs.
-
-        print(f"this_roll is {this_roll}")
-        print(f"held dice is {held_dice}")
-        combined = held_dice + list(this_roll)
-        print(f"combined is {combined}")
-
-        # ? Is there a 1 in the newly rolled dice?
-        if 1 in this_roll:
-            return False
-
-        # ? Is there a 5 in the newly rolled dice?
-        if 5 in this_roll:
-            return False
-
-        # ? Is there a 3 of a kind or better of any die face, WITHOUT use of held dice?
-        if (
-            this_roll.count(1) >= 3
-            or this_roll.count(2) >= 3
-            or this_roll.count(3) >= 3
-            or this_roll.count(4) >= 3
-            or this_roll.count(5) >= 3
-            or this_roll.count(6) >= 3
-        ):
-            return False
-
-        # ? None of the above are true, which means no
-        # ? scoring dice exist. Zilch!
-        return True
-
-    @staticmethod
     def display_tuple(tuple):
         output = " "
         for i in tuple:
@@ -127,11 +92,6 @@ class GameLogic:
             output = output + " "
         return output
 
-
-    #! ALERT: UNSOLVED BUG IN GET SCORERS BELOW!!!
-    #! After holding some dice and rolling again, unscoring dice 
-    #! like 2 are occasionally treated as scorers.
-    
     # The bot only uses the roll value, but my scorer determination method
     # requires both the scorer, and the current hand of held dice.
     # Having a None held value that gets updated with the current held dice
@@ -139,24 +99,15 @@ class GameLogic:
     @staticmethod
     def get_scorers(roll, held=None):
         scorers = []
-        print(f"roll is {roll}")
 
         # held should always be none, and then get updated with
         # the actual hold here.
         if held == None:
             held = held_dice
-            print(f"Player's held dice is {held}")
         combined = held + list(roll)
-        print(f"combined is {combined}")
 
         # Get the total score on the table for all dice, in hand AND just rolled.
         all_score = GameLogic.calculate_score(combined)
-
-        # Zilch check!
-        if all_score == 0:
-            return False
-
-        print(f"all_score prior to calculations is {all_score}")
 
         tabled_dice = list(roll)
 
@@ -167,19 +118,23 @@ class GameLogic:
         # die removed, then it was a scorer.
         for i in range(len(tabled_dice)):
             removed = tabled_dice[:i] + tabled_dice[i + 1 :]
-            print(f"value of removed is {removed}")
-            print(
-                f"the calculated score of removed was {GameLogic.calculate_score(removed)}"
-            )
-            if GameLogic.calculate_score(removed) != all_score:
-                confirmed_scorers.append(tabled_dice[i])
-                print(f"scorer found! confirmed scorers is now {confirmed_scorers}")
 
-        print(f"confirmed scorers being returned is {confirmed_scorers}")
+            # Append the held dice to the removed list now that the die in
+            # question has been eliminated.
+            removed_plus_hand = removed + held
+
+            # Calculate score of all dice on table minus die in question.
+            # Did removing that die lower our score? if so, append to
+            # a confirmed_scorers list.
+            if GameLogic.calculate_score(removed_plus_hand) != all_score:
+                confirmed_scorers.append(tabled_dice[i])
+
+        # Did we find any confirmed scorers in this roll? if no, ZILCH!
+        if len(confirmed_scorers) == 0:
+            # Send false signal instead of scorers list to trigger zilch logic.
+            return False
 
         return confirmed_scorers
-    
-    #! ALERT: UNSOLVED BUG IN GET SCORERS ABOVE!!!
 
     @staticmethod
     # Gets user input for hold request and eliminates spaces or letters,
@@ -245,6 +200,10 @@ class GameLogic:
 
         # ?Main loop
         while playing == True:
+            # Break loop if we've completed round 20 to end game.
+            if round_count >= 21:
+                print(f"Thanks for playing. You earned {total_score} points")
+                exit()
             # Round begins, if new_round latch is true, state that we're starting a new round.
             if new_round == True:
                 print(f"Starting round {round_count}")
@@ -253,14 +212,7 @@ class GameLogic:
 
             this_roll = GameLogic.roll_dice(die_count)
 
-            # ?Sleep was a fun idea, but it slows down bots.py.
-            # time.sleep(0.60)
-
             print(f"***{GameLogic.display_tuple(this_roll)}***")
-
-            # check for zilch, where if holding all dice just rolled along with already held dice gives no increase to hand score.
-            # print(f"at time of zilch check, this_roll was {this_roll}")
-            # print(f"the get scorers just returned{GameLogic.get_scorers(this_roll)}")
 
             if GameLogic.get_scorers(this_roll) == False:
                 print("\nZilch!\n")
@@ -269,14 +221,6 @@ class GameLogic:
                 round_count += 1
                 die_count = 6
                 new_round = True
-
-            # if GameLogic.zilch_check(this_roll, held_dice) == True:
-            #     print("\nZilch!\n")
-            #     hand_score = 0
-            #     held_dice = []
-            #     round_count += 1
-            #     die_count = 6
-            #     new_round = True
 
             else:
                 # Set new_round to false, that way if we roll again on the same round, the Zilch check can occur.
@@ -320,18 +264,21 @@ class GameLogic:
                 # Calculate this hand's score from the dice currently held
                 hand_score = GameLogic.calculate_score(held_dice)
 
-                # Check for user having held all dice, and respond for them that they want to bank whatever they have.
+                # Check for user having held all dice without a zilch, and
+                # notify of hot dice rule.
                 if die_count == 0:
-                    response = "b"
+                    print(f"hot dice! 6 more dice provided for reroll!")
+                    die_count = 6
 
-                # Otherwise, tell of hand score, dice available, and prompt for user response.
-                else:
-                    print(
-                        f"You have {hand_score} unbanked points and {die_count} dice remaining"
-                    )
+                # Tell player hand score, dice available, and
+                # prompt for user response.
 
-                    print("(r)oll again, (b)ank your points or (q)uit:")
-                    response = input("> ")
+                print(
+                    f"You have {hand_score} unbanked points and {die_count} dice remaining"
+                )
+
+                print("(r)oll again, (b)ank your points or (q)uit:")
+                response = input("> ")
 
                 if response == "q":
                     print(f"Thanks for playing. You earned {total_score} points")
