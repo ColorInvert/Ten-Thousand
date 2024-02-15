@@ -1,11 +1,13 @@
 
-LAB - Class 08
-Project: Ten Thousand Version 3
+LAB - Class 09
+Project: Ten Thousand Version 4
 Author: Casey Glidewell
 
 How to initialize/run your application (where applicable)
 
     Running game_logic.py in the ten_thousand folder will begin the game in your console.
+
+    Running bots.py will allow you to see how a bot performs playing the game 100 times. (more details below)
 
 Tests
 
@@ -23,4 +25,9 @@ Tests
     Should allow user to continue rolling with 6 new dice when all dice have scored in current turn.
 
     Handle zilch
-    No points for round, and round is over
+    No points for round, and round is over.
+
+    Version 4 tested that all functionality of the game was as expected by having a pre-made bot play the game, and required the creation of a bot that performs better on average than it.
+
+    The premade bot will take all scoring dice, and bank immediately no matter what.
+
